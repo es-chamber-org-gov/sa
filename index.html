@@ -24,22 +24,22 @@
         
         /* লোডিং টেক্সট স্টাইল */
         #loadingText {
-            display: none; color: #ffffff; font-size: 22px; font-weight: bold;
+            display: none; color: #ffffff; font-size: 15px; font-weight: bold;
             margin-top: 20px; font-family: sans-serif; letter-spacing: 1px;
         }
 
         /* হেডার ও টুলবার */
-        .main-header { background: linear-gradient(to right, #009640, #1D70B8, #003366); height: 70px; display: flex; align-items: center; justify-content: flex-end; padding: 0 30px; }
-        .logo-container img { height: 50px; object-fit: contain; }
-        .toolbar-container { background-color: #ffffff; padding: 12px 20px; border-bottom: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 10px; }
-        .toolbar-row { display: flex; align-items: center; gap: 8px; }
-        .btn-tool { background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 12px; color: #334155; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; transition: all 0.2s; }
+        .main-header { background: linear-gradient(to right, #009640, #1D70B8, #003366); height: 55px; display: flex; align-items: center; justify-content: flex-end; padding: 0 20px; }
+        .logo-container img { height: 55px; object-fit: contain; }
+        .toolbar-container { background-color: #ffffff; padding: 10px 16px; border-bottom: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 5px; }
+        .toolbar-row { display: flex; align-items: center; gap: 5px; }
+        .btn-tool { background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 5px 10px; color: #334155; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; transition: all 0.2s; }
         .btn-tool:hover { background-color: #f8fafc; border-color: #94a3b8; }
         
         /* কন্টেন্ট এরিয়া এবং ইমেজ কন্টেইনার */
         .content-area {
-            margin: 20px;
-            padding: 20px;
+            margin: 5px;
+            padding: 5px;
             display: flex;
             justify-content: center;
             overflow: auto;
@@ -107,21 +107,40 @@
     </div>
 
     <script>
-        // ১. গিটহাব কনফিগারেশন (এখানে আপনার নিজের তথ্য বসিয়ে দিন)
-        const githubUsername = "es-chamber-org-sa-gov"; // আপনার গিটহাব ইউজারনেম
-        const repoName = "ksa";             // আপনার রিপোজিটরির নাম
-        const folderName = "Document";                 // ফোল্ডারের নাম
-
-        // ইউআরএল থেকে ফাইলের নাম নেওয়ার লজিক (নিয়ম: index.html?file=image1.jpg)
+        // ইউআরএল থেকে প্যারামিটার নেওয়ার লজিক
         const urlParams = new URLSearchParams(window.location.search);
-        const fileName = urlParams.get('file');
+        const token = urlParams.get('token');
+        let fileName = urlParams.get('file');
 
-        // গিটহাবের লাইভ র (Raw) ফাইল লিংক তৈরি
-        let imageUrl = `https://raw.githubusercontent.com/${githubUsername}/${repoName}/main/${folderName}/${fileName}`;
-        
-        // যদি ইউআরএল এ কোনো ফাইল নির্দিষ্ট না থাকে তবে প্লেসহোল্ডার ইমেজ দেখাবে
-        if (!fileName) {
-            imageUrl = "https://github.com/es-chamber-org-gov/sa/tree/main/Document";
+        // ডিফল্ট গিটহাব কনফিগারেশন (টোকেন না থাকলে ব্যাকআপ হিসেবে কাজ করবে)
+        let githubUsername = "es-chamber-org-sa-gov"; 
+        let repoName = "ksa";             
+        let folderName = "Document";                 
+        let imageUrl = "";
+
+        // ১. যদি QR কোডের টোকেন থাকে, তবে সেটি ডিকোড করার লজিক
+        if (token) {
+            try {
+                // Base64 ডিকোড করা
+                const decodedData = decodeURIComponent(escape(atob(token)));
+                const config = JSON.parse(decodedData);
+                
+                githubUsername = config.u || githubUsername;
+                repoName = config.r || repoName;
+                folderName = config.fd || folderName;
+                fileName = config.fl;
+                
+                imageUrl = `https://raw.githubusercontent.com/${githubUsername}/${repoName}/main/${folderName}/${fileName}`;
+            } catch (e) {
+                console.error("Token decoding failed:", e);
+                alert("QR লিঙ্কটি সঠিক নয় বা করাপ্ট হয়ে গেছে।");
+            }
+        } else if (fileName) {
+            // ২. সাধারণ ইউআরএল নিয়ম: ?file=image1.jpg
+            imageUrl = `https://raw.githubusercontent.com/${githubUsername}/${repoName}/main/${folderName}/${fileName}`;
+        } else {
+            // ৩. যদি কোনো প্যারামিটারই না থাকে
+            imageUrl = "https://github.com/es-chamber-org-sa-gov/ksa.portal/tree/main/Document";
         }
 
         // ভিউয়ারের বেসিক স্টেট
@@ -130,7 +149,7 @@
         const mainImage = document.getElementById('mainImage');
         const imageWrapper = document.getElementById('imageWrapper');
 
-        // ২. টাইমিং ও অ্যানিমেশন কন্ট্রোল (৮ সেকেন্ড অ্যানিমেশন + ২ সেকেন্ড লোডিং টেক্সট)
+        // ৪. টাইমিং ও অ্যানিমেশন কন্ট্রোল (৮ সেকেন্ড অ্যানিমেশন + ২ সেকেন্ড লোডিং টেক্সট)
         window.addEventListener('DOMContentLoaded', () => {
             // ৮ সেকেন্ড পর অ্যানিমেশন বন্ধ হয়ে লেখা আসবে
             setTimeout(() => {
@@ -138,7 +157,9 @@
                 document.getElementById('loadingText').style.display = 'block';
                 
                 // ইমেজ ব্যাকগ্রাউন্ডে লোড করা শুরু হবে
-                mainImage.src = imageUrl;
+                if(imageUrl) {
+                    mainImage.src = imageUrl;
+                }
             }, 8000);
 
             // মোট ১০ সেকেন্ড পর পুরো প্রি-লোডার স্ক্রিন গায়েব হয়ে যাবে
@@ -148,7 +169,7 @@
             }, 10000);
         });
 
-        // ৩. জুম এবং রোটেশন লজিক
+        // ৫. জুম এবং রোটেশন লজিক
         function updateTransform() {
             imageWrapper.style.transform = `scale(${scale}) rotate(${rotation}deg)`;
         }
@@ -181,27 +202,22 @@
             updateTransform();
         });
 
-        // ৪. অটোমেটিক JPG to PDF কনভার্ট এবং ডাউনলোড লজিক
+        // ৬. অটোমেটিক JPG to PDF কনভার্ট এবং ডাউনলোড লজিক
         document.getElementById('downloadPdf').addEventListener('click', () => {
             const { jsPDF } = window.jspdf;
             
-            // ইমেজের অরিজিনাল সাইজ অনুযায়ী PDF তৈরি করা
             const img = new Image();
             img.crossOrigin = "Anonymous"; // CORS এরর এড়ানোর জন্য
             img.src = mainImage.src;
             
             img.onload = function() {
-                // ইমেজের প্রস্থ ও উচ্চতা নেওয়া
                 const imgWidth = this.width;
                 const imgHeight = this.height;
                 
-                // ইমেজের ওরিয়েন্টেশন অনুযায়ী PDF পেজ সেটাপ (পোর্ট্রেট বা ল্যান্ডস্কেপ)
                 const orientation = imgWidth > imgHeight ? 'l' : 'p';
                 const pdf = new jsPDF(orientation, 'px', [imgWidth, imgHeight]);
                 
-                // পিডিএফ এ ইমেজ যোগ করা
                 pdf.addImage(img, 'JPEG', 0, 0, imgWidth, imgHeight);
-                // অটোমেটিক ডাউনলোড
                 pdf.save(fileName ? fileName.replace(/\.[^/.]+$/, "") + ".pdf" : "document.pdf");
             };
             
@@ -210,7 +226,7 @@
             };
         });
 
-        // ৫. ডার্ক মোড টগল লজিক
+        // ৭. ডার্ক মোড টগল লজিক
         document.getElementById('darkModeToggle').addEventListener('click', function() {
             document.body.classList.toggle('dark-mode');
             const icon = this.querySelector('i');
